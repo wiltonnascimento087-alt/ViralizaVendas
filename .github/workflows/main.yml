@@ -1,0 +1,40 @@
+name: Gerar APK Viraliza Vendas
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar projeto
+        uses: actions/checkout@v4
+
+      - name: Extrair projeto Android
+        run: |
+          mkdir projeto
+          ZIP=$(find . -maxdepth 1 -name '*PACOTE-ORGANIZADO*.zip' | head -n 1)
+          unzip -o "$ZIP" -d projeto
+          PROJECT_DIR=$(dirname "$(find projeto -name settings.gradle | head -n 1)")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+
+      - name: Preparar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Preparar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Compilar APK
+        run: gradle -p "$PROJECT_DIR" assembleDebug
+
+      - name: Disponibilizar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ViralizaVendas-APK
+          path: projeto/**/app/build/outputs/apk/debug/app-debug.apk
